@@ -338,12 +338,10 @@ jobs:
 # ------------------------------------------------------------------------------------------------------------------------------------------
   build-windows:
     name: Windows
-    runs-on: windows-latest
-    continue-on-error: true
-    if: false # Disabled pending Qt6 Craft validation
+    runs-on: windows-2022
     env:
       WORKSPACE: ${{ github.workspace }}
-      CRAFT: /C/CraftMaster/windows-msvc2019_64-cl/craft/bin/craft.py
+      CRAFT: /C/CraftMaster/windows-cl-msvc2022-x86_64/craft/bin/craft.py
 
     steps:
     - name: Check out source code
@@ -352,6 +350,11 @@ jobs:
         fetch-depth: 0  # so git-describe works
         submodules: recursive
 
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
     - name: Fetch tag information
       if: startsWith(github.ref, 'refs/tags/')
       run: git fetch -f origin $GITHUB_REF:$GITHUB_REF
@@ -359,17 +362,73 @@ jobs:
     - name: Clone CraftMaster
       run: git clone --depth=1 https://invent.kde.org/packaging/craftmaster.git /C/CraftMaster/CraftMaster
 
+    - name: Restore Git usr path compatibility
+      shell: pwsh
+      run: |
+        $gitRoot = 'C:\Program Files\Git'
+        $legacyUsrPath = Join-Path $gitRoot 'mingw64\usr'
+        $currentUsrPath = Join-Path $gitRoot 'usr'
+
+        if (Test-Path $legacyUsrPath) {
+          Write-Host "Git usr path compatibility already exists: $legacyUsrPath"
+          exit 0
+        }
+
+        if (-not (Test-Path $currentUsrPath)) {
+          throw "Expected Git usr tools at $currentUsrPath, but the directory does not exist."
+        }
+
+        New-Item -ItemType Junction -Path $legacyUsrPath -Target $currentUsrPath | Out-Null
+
     - name: Configure CraftMaster
       run: python /C/CraftMaster/CraftMaster/CraftMaster.py --config $WORKSPACE/.craftsettings.ini --variables "WORKSPACE=$WORKSPACE"
 
     - name: Add Quassel blueprint
       run: python $CRAFT --add-blueprint-repository https://github.com/quassel/craft-blueprints-quassel.git
 
-    - name: Install NSIS
-      run: python $CRAFT dev-utils/nsis
+    - name: Patch Quassel blueprint for Craft packaging
+      shell: python
+      run: |
+        from pathlib import Path
+
+        blueprint = Path(r"C:\CraftMaster\windows-cl-msvc2022-x86_64\etc\blueprints\locations\craft-blueprints-quassel\quassel\quassel\quassel.py")
+        text = blueprint.read_text(encoding="utf-8")
+
+        replacements = {
+            "import info": "import os\nimport utils\n\nimport info",
+            "CMakePackageBase.__init__(self)": "CMakePackageBase.__init__(self, **args)",
+            '        if CraftCore.compiler.isWindows:\n            self.runtimeDependencies["qt-libs/snorenotify"] = None\n': "",
+            '        self.runtimeDependencies["libs/boost/boost-headers"] = None': '        self.runtimeDependencies["libs/boost"] = None',
+            'self.runtimeDependencies["libs/qt5/qtbase"] = None': 'self.runtimeDependencies["libs/qt6/qtbase"] = None\n        self.runtimeDependencies["libs/qt6/qt5compat"] = None',
+            'self.buildDependencies["libs/qt5/qttools"] = None': 'self.buildDependencies["libs/qt6/qttools"] = None',
+            'self.subinfo.options.configure.args += f" -DUSE_QT5=ON -DWITH_KDE={self.subinfo.options.dynamic.buildWithKDE}"': 'self.subinfo.options.configure.args += f" -DWITH_KDE={self.subinfo.options.dynamic.buildWithKDE} -DWITH_WEBENGINE=OFF -DBUILD_TESTING=ON"',
+        }
+
+        removals = [
+            '        self.runtimeDependencies["dev-utils/pkg-config"] = None\n',
+            '        self.runtimeDependencies["libs/qt5/qtwebengine"] = None\n',
+            '        self.runtimeDependencies["libs/qt5/qtscript"] = None\n',
+        ]
+
+        for old, new in replacements.items():
+            if old not in text:
+                raise SystemExit(f"Expected pattern not found in {blueprint}: {old}")
+            text = text.replace(old, new, 1)
+
+        for old in removals:
+            if old not in text:
+                raise SystemExit(f"Expected pattern not found in {blueprint}: {old.strip()}")
+            text = text.replace(old, "", 1)
+
+        blueprint.write_text(text, encoding="utf-8")
 
     - name: Install dependencies
       run: python $CRAFT --install-deps quassel/quassel
+
+    - name: Install packaging tools
+      run: |
+        python $CRAFT dev-utils/_windows/nsis
+        python $CRAFT dev-utils/_msvc/snoretoast
 
     - name: Build
       run: python $CRAFT --no-cache --src-dir $WORKSPACE quassel/quassel
@@ -390,7 +449,7 @@ jobs:
   post-build:
     name: Post-Build
     runs-on: ubuntu-latest
-    needs: [ build-linux, build-macos ] # Windows artifacts are optional while the Craft path stays disabled
+    needs: [ build-linux, build-macos, build-windows ]
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -417,7 +476,7 @@ jobs:
         mac_count=$(find artifacts/ -type f -name 'Quassel*.dmg' -printf '.' | wc -c)
         windows_count=$(find artifacts/ \( -type f -name 'quassel*.exe' -o -type f -name 'quassel*.7z' \) -printf '.' | wc -c)
         [[ "$mac_count" -eq 3 ]]
-        [[ "$windows_count" -eq 0 || "$windows_count" -eq 2 ]]
+        [[ "$windows_count" -eq 2 ]]
 
     - name: Create release notes
       if: startsWith(github.ref, 'refs/tags/')
@@ -453,12 +512,10 @@ jobs:
         done
         windows_setups=(artifacts/Windows/quassel-*.exe)
         windows_archives=(artifacts/Windows/quassel-*.7z)
-        if [[ ${#windows_setups[@]} -gt 0 || ${#windows_archives[@]} -gt 0 ]]; then
-          [[ ${#windows_setups[@]} -eq 1 ]]
-          [[ ${#windows_archives[@]} -eq 1 ]]
-          mv "${windows_setups[0]}" assets/quassel-windows-setup-$TAGNAME.exe
-          mv "${windows_archives[0]}" assets/quassel-windows-$TAGNAME.7z
-        fi
+        [[ ${#windows_setups[@]} -eq 1 ]]
+        [[ ${#windows_archives[@]} -eq 1 ]]
+        mv "${windows_setups[0]}" assets/quassel-windows-setup-$TAGNAME.exe
+        mv "${windows_archives[0]}" assets/quassel-windows-$TAGNAME.7z
 
     - name: Create checksums for release assets
       if: startsWith(github.ref, 'refs/tags/')

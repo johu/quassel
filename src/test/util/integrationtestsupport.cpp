@@ -24,7 +24,10 @@
 #include <vector>
 
 #include <QByteArray>
+#include <QCoreApplication>
+#include <QElapsedTimer>
 #include <QTemporaryDir>
+#include <QThread>
 
 #include "client.h"
 #include "core.h"
@@ -121,6 +124,11 @@ void initializeEnvironment()
     qputenv("XDG_DATA_HOME", tempPath);
     qputenv("XDG_CACHE_HOME", tempPath);
     qputenv("XDG_STATE_HOME", tempPath);
+#ifdef Q_OS_WIN
+    qputenv("APPDATA", tempPath);
+    qputenv("LOCALAPPDATA", tempPath);
+    qputenv("USERPROFILE", tempPath);
+#endif
 }
 
 }  // namespace
@@ -181,6 +189,38 @@ std::unique_ptr<TestUi> QuasselTestSupport::createTestUi()
 {
     ensureInitialized();
     return std::make_unique<TestUi>();
+}
+
+bool QuasselTestSupport::waitForClientSynchronization(int timeout)
+{
+    ensureInitialized();
+
+    auto* connection = Client::coreConnection();
+    if (!connection) {
+        return false;
+    }
+
+    const auto isSynchronized = [connection]() {
+        return Client::isConnected() && connection->state() == CoreConnection::Synchronized;
+    };
+
+    if (isSynchronized()) {
+        return true;
+    }
+
+    QElapsedTimer timer;
+    timer.start();
+
+    while (timer.elapsed() < timeout) {
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+        if (isSynchronized()) {
+            return true;
+        }
+        QThread::msleep(25);
+    }
+
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+    return isSynchronized();
 }
 
 InternalCoreConnectionBridge::InternalCoreConnectionBridge(Core* core, QObject* parent)

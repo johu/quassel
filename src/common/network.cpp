@@ -1312,40 +1312,6 @@ QDataStream& operator>>(QDataStream& in, Network::Server& server)
     return in;
 }
 
-bool Network::Server::operator==(const Server& other) const
-{
-    if (host != other.host)
-        return false;
-    if (port != other.port)
-        return false;
-    if (password != other.password)
-        return false;
-    if (useSsl != other.useSsl)
-        return false;
-    if (sslVerify != other.sslVerify)
-        return false;
-    if (sslVersion != other.sslVersion)
-        return false;
-    if (useProxy != other.useProxy)
-        return false;
-    if (proxyType != other.proxyType)
-        return false;
-    if (proxyHost != other.proxyHost)
-        return false;
-    if (proxyPort != other.proxyPort)
-        return false;
-    if (proxyUser != other.proxyUser)
-        return false;
-    if (proxyPass != other.proxyPass)
-        return false;
-    return true;
-}
-
-bool Network::Server::operator!=(const Server& other) const
-{
-    return !(*this == other);
-}
-
 QDebug operator<<(QDebug dbg, const Network::Server& server)
 {
     dbg.nospace() << "Server(host = " << server.host << ":" << server.port << ", useSsl = " << server.useSsl

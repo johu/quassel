@@ -70,6 +70,7 @@ public:
     static Quassel* ensureInitialized(Quassel::RunMode runMode = Quassel::Monolithic);
     static QString configDirPath();
     static std::unique_ptr<TestUi> createTestUi();
+    static bool waitForClientSynchronization(int timeout = 15000);
 };
 
 class TEST_UTIL_EXPORT InternalCoreConnectionBridge : public QObject

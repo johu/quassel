@@ -117,7 +117,7 @@ public:
     }
     // inline operator int() const { return toQint64(); } // no automatic conversion!
 
-    friend QDataStream& operator>>(QDataStream& in, SignedId64& signedId);
+    friend COMMON_EXPORT QDataStream& operator>>(QDataStream& in, SignedId64& signedId);
 };
 
 COMMON_EXPORT QDataStream& operator<<(QDataStream& out, const SignedId64& signedId);

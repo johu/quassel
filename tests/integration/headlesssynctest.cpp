@@ -44,13 +44,12 @@ TEST_F(HeadlessSyncTest, internalCoreConnectionSynchronizesClient)
 
     test::InternalCoreConnectionBridge bridge(&core);
 
-    QSignalSpy connectedSpy(&client, &Client::connected);
     QSignalSpy errorSpy(Client::coreConnection(), &CoreConnection::connectionError);
 
     ASSERT_TRUE(Client::coreConnection()->connectToCore());
 
-    if (!Client::isConnected()) {
-        ASSERT_TRUE(connectedSpy.wait(5000));
+    if (!Client::isConnected() || Client::coreConnection()->state() != CoreConnection::Synchronized) {
+        ASSERT_TRUE(test::QuasselTestSupport::waitForClientSynchronization());
     }
 
     EXPECT_TRUE(Client::isConnected());

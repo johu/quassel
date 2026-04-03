@@ -123,7 +123,7 @@ public slots:
     void removeNetwork(const NetworkId& netId)
     {
         // Remove the network from the cache list
-        if (_nickMatchCache.remove(netId) > 0) {
+        if (_nickMatchCache.remove(netId)) {
             qDebug() << "Cleared nickname matching cache for removed network ID" << netId;
         }
     }

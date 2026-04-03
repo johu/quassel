@@ -152,8 +152,23 @@ public:
             , proxyPort(8080)
         {}
 
-        bool operator==(const Server& other) const;
-        bool operator!=(const Server& other) const;
+        bool operator==(const Server& other) const
+        {
+            return host == other.host
+                && port == other.port
+                && password == other.password
+                && useSsl == other.useSsl
+                && sslVerify == other.sslVerify
+                && sslVersion == other.sslVersion
+                && useProxy == other.useProxy
+                && proxyType == other.proxyType
+                && proxyHost == other.proxyHost
+                && proxyPort == other.proxyPort
+                && proxyUser == other.proxyUser
+                && proxyPass == other.proxyPass;
+        }
+
+        bool operator!=(const Server& other) const { return !(*this == other); }
     };
     using ServerList = QList<Server>;
 

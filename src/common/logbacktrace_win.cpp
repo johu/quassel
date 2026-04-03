@@ -23,6 +23,7 @@
 #include <windows.h>
 #include <dbghelp.h>
 
+#include <QDebug>
 #include <QFile>
 #include <QTextStream>
 
@@ -150,7 +151,10 @@ Label:
     // EnterCriticalSection(&DbgHelpLock);
 
     QFile logFile(filename);
-    logFile.open(QIODevice::Append);
+    if (!logFile.open(QIODevice::Append)) {
+        qWarning() << "Could not open backtrace log file" << filename << ":" << logFile.errorString();
+        return;
+    }
     QTextStream logStream(&logFile);
 
     HANDLE hProcess = GetCurrentProcess();

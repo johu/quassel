@@ -154,7 +154,7 @@ private:
     QString defaultNick();
     QString defaultRealName();
 
-    friend QDataStream& operator>>(QDataStream& in, Identity& identity);
+    friend COMMON_EXPORT QDataStream& operator>>(QDataStream& in, Identity& identity);
 };
 
 COMMON_EXPORT QDataStream& operator<<(QDataStream& out, Identity identity);

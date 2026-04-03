@@ -122,7 +122,7 @@ private:
     Type _type;
     Flags _flags;
 
-    friend QDataStream& operator>>(QDataStream& in, Message& msg);
+    friend COMMON_EXPORT QDataStream& operator>>(QDataStream& in, Message& msg);
 };
 
 using MessageList = QList<Message>;

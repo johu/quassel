@@ -74,8 +74,8 @@ private:
     QString _bufferName;
 
     friend uint qHash(const BufferInfo&);
-    friend QDataStream& operator<<(QDataStream& out, const BufferInfo& bufferInfo);
-    friend QDataStream& operator>>(QDataStream& in, BufferInfo& bufferInfo);
+    friend COMMON_EXPORT QDataStream& operator<<(QDataStream& out, const BufferInfo& bufferInfo);
+    friend COMMON_EXPORT QDataStream& operator>>(QDataStream& in, BufferInfo& bufferInfo);
 };
 
 COMMON_EXPORT QDataStream& operator<<(QDataStream& out, const BufferInfo& bufferInfo);
