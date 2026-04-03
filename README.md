@@ -36,12 +36,15 @@ Once you've set up Quassel, you may:
 * Add more users: `quasselcore --add-user`
 * Change the password of an existing user: `quasselcore --change-userpass=username`
 * See all available options: `quasselcore --help`
+* Run a PostgreSQL-backed Docker deployment using the files in [`docker/`](docker/)
 
 On some systems, you may need to specify `--configdir`, e.g.
 `quasselcore --configdir=/var/lib/quassel [command]`.
 
 To learn more, see [the Quassel project wiki](https://bugs.quassel-irc.org/projects/quassel-irc/wiki) for in-depth
-documentation.
+documentation. For the container deployment path, start with
+[`docker/README.md`](docker/README.md) and
+[`docker/MIGRATION.md`](docker/MIGRATION.md).
 
 ## Getting involved
 

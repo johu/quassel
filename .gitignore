@@ -4,6 +4,8 @@
 /.vscode
 /build*
 /cmake-build-*
+/docker-data/
+/.env
 *.pyc
 tags
 

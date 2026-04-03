@@ -127,3 +127,18 @@ for example LINGUAS="de en_US".
 
 After running CMake, you can just run "cmake --build ." in the build directory,
 and "cmake --install ." for installing the result into the installation prefix.
+
+Running quasselcore with Docker
+-------------------------------
+
+This repository also ships a Docker-focused deployment path for `quasselcore`
+using PostgreSQL. The reference setup lives in the repository root:
+
+- `Dockerfile`
+- `docker-compose.yml`
+- `.env.example`
+- `docker/README.md`
+- `docker/MIGRATION.md`
+
+Use that path if you want a repeatable Linux deployment or plan to migrate an
+existing host installation into a containerized PostgreSQL-backed core.
