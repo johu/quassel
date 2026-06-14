@@ -374,11 +374,7 @@ void MainWin::setupActions()
     connect(action, &QAction::toggled, this, &MainWin::onLockLayoutToggled);
 
 #ifdef HAVE_KDE
-#    if KCONFIGWIDGETS_VERSION < QT_VERSION_CHECK(5, 23, 0)
-    _fullScreenAction = KStandardAction::fullScreen(this, SLOT(onFullScreenToggled()), this, coll);
-#    else
     _fullScreenAction = KStandardAction::fullScreen(this, &MainWin::onFullScreenToggled, this, coll);
-#    endif
 #else
     _fullScreenAction = new Action(icon::get("view-fullscreen"),
                                    tr("&Full Screen Mode"),
@@ -614,13 +610,8 @@ void MainWin::setupMenus()
 
     _settingsMenu = menuBar()->addMenu(tr("&Settings"));
 #ifdef HAVE_KDE
-#    if KCONFIGWIDGETS_VERSION < QT_VERSION_CHECK(5, 23, 0)
-    _settingsMenu->addAction(KStandardAction::configureNotifications(this, SLOT(showNotificationsDlg()), this));
-    _settingsMenu->addAction(KStandardAction::keyBindings(this, SLOT(showShortcutsDlg()), this));
-#    else
     _settingsMenu->addAction(KStandardAction::configureNotifications(this, &MainWin::showNotificationsDlg, this));
     _settingsMenu->addAction(KStandardAction::keyBindings(this, &MainWin::showShortcutsDlg, this));
-#    endif
 #else
     _settingsMenu->addAction(coll->action("ConfigureShortcuts"));
 #endif
@@ -632,11 +623,7 @@ void MainWin::setupMenus()
 #ifndef HAVE_KDE
     _helpMenu->addAction(coll->action("AboutQt"));
 #else
-#    if KCONFIGWIDGETS_VERSION < QT_VERSION_CHECK(5, 23, 0)
-    _helpMenu->addAction(KStandardAction::aboutKDE(_kHelpMenu, SLOT(aboutKDE()), this));
-#    else
     _helpMenu->addAction(KStandardAction::aboutKDE(_kHelpMenu, &KHelpMenu::aboutKDE, this));
-#    endif
 #endif
     _helpMenu->addSeparator();
     _helpDebugMenu = _helpMenu->addMenu(icon::get("tools-report-bug"), tr("Debug"));
